@@ -4,7 +4,7 @@ $(document).ready(function() {
   var contentDiv = $(".messages");
   var lastMessageTime = new Date("2000-01-21T00:12:59.906Z");
   var username = window.location.search.slice(10);
-  var currentRoom = "green room";
+  var currentRoom = "heeeeeeeeeeelp";
   var rooms = {};
   var $roomsAvail = $('.roomsAvail');
 
@@ -101,6 +101,12 @@ $(document).ready(function() {
     send(makeMessage());
     $('.messagebox').val("");
   });
+
+  $(".roomsAvail").on("change", function() {
+    console.log("change happened... " + $(this) + "changed");
+
+  });
+
   firstFetch(display);
   refresh();
 
