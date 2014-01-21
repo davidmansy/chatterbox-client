@@ -6,6 +6,7 @@ $(document).ready(function() {
   var username = window.location.search.slice(10);
   var currentRoom = "heeeeeeeeeeelp";
   var rooms = {};
+  var users = {};
   var $roomsAvail = $('.roomsAvail');
 
 
@@ -13,7 +14,7 @@ $(document).ready(function() {
     var message = {};
     message.username = username;
     message.text = $(".messagebox").val();
-    message.room = currentRoom;
+    message.roomname = currentRoom;
     return message;
   };
 
@@ -48,12 +49,39 @@ $(document).ready(function() {
   };
 
   var storeRooms = function(message) {
-    if(message.room && !(rooms[message.room])) {
-      rooms[message.room] = message.room;
-      addRoomsToList(message.room);
+    if(message.roomname && !(rooms[message.roomname])) {
+      if(message.roomname.length > 15) {
+        message.roomname = message.roomname.slice(0,15) + "...";
+      }
+      rooms[message.roomname] = message.roomname;
+      addRoomsToList(message.roomname);
       console.log(message.room);
     }
   };
+
+  var storeUsers = function(message) {
+    if(message.username && !(users[message.username])) {
+      if(message.username.length > 15) {
+        message.username = message.username.slice(0,15) + "...";
+      }
+      users[message.username] = {};
+      users[message.username]['friend'] = false;
+      addUsersToList(message.username);
+      console.log(users[message.username]);
+    }
+  };
+
+  var switchFriend = function(name) {
+    console.log(users[name]);
+    console.log(users[name].friend);
+    if(users[name].friend === true) {
+      users[name].friend = false;
+    }else {
+      users[name].friend = true;
+    }
+    console.log(users[name].friend);
+  };
+
 
   var addRoomsToList = function(room) {
     var $option = $("<option></option>");
@@ -61,6 +89,17 @@ $(document).ready(function() {
     $option.text(room);
     $roomsAvail.append($option);
   };
+
+  var addUsersToList = function(name) {
+    var $label = $("<label></label>");
+    var $checkbox = $("<input type='checkbox' name='users'/>");
+    $checkbox.attr("value", name);
+    $label.append($checkbox);
+    $label.append(name);
+    $(".users").append($label);
+    $(".users").append("<br>");
+  };
+//         <input type="checkbox" name="users" value="Vinnie">Vinnie<br>
 
   var fetch = function(fn) {
     var messagesPromise = getMessages();
@@ -70,6 +109,7 @@ $(document).ready(function() {
           fn(message);
           lastMessageTime = new Date(message.createdAt);
           storeRooms(message);
+          storeUsers(message);
         }
       });
     });
@@ -81,14 +121,35 @@ $(document).ready(function() {
       $.each(messages, function(index, message) {
         fn(message);
         storeRooms(message);
+        storeUsers(message);
       });
     });
   };
 
+  var parseOld = function() {
+    $(".message").each(function(index) {
+      console.log($(this).attr("name"));
+      var name = $(this).attr("name");
+      if(users[name] && users[name].friend === true) {
+        $(this).addClass("messageBold");
+      }
+      if(users[name] && users[name].friend === false) {
+        $(this).removeClass("messageBold");
+      }
+    });
+  };
+
   var display = function(message) {
-    var messageDiv = $("<div></div>").text(message.username + ' said ' + message.text +
-                                            ', created at: ' + new Date(message.createdAt) + ' from room: ' + message.room);
-    contentDiv.prepend(messageDiv);
+    var $messageDiv = $("<div></div>");
+    $messageDiv.attr("name", message.username);
+    $messageDiv.addClass("message", message.username);
+    $messageDiv.text(message.username + ' said ' + message.text);
+    if(users[message.username] && users[message.username].friend === true) {
+      $messageDiv.addClass("messageBold");
+    } else {
+      $messageDiv.removeClass("messageBold");
+    }
+    contentDiv.prepend($messageDiv);
   };
 
   var refresh = function() {
@@ -103,14 +164,22 @@ $(document).ready(function() {
   });
 
   $(".roomsAvail").on("change", function() {
-    console.log("change happened... " + $(this) + "changed");
+    console.log("change happened... " + $( ".roomsAvail option:selected" ).val() + " changed");
+  });
+
+  $(".users").on("change", "input", function() {
+    console.log("change happened...");
+    console.log($(this).attr("value"));
+    switchFriend($(this).attr("value"));
+    parseOld();
 
   });
 
+
   firstFetch(display);
   refresh();
-
 });
+
   // var fetch = function(fn) {
   //   $.ajax({
   //     url: "https://api.parse.com/1/classes/chatterbox",

@@ -5,7 +5,7 @@ body {
 }
 
 #main {
-    width: 500px;
+    width: 600px;
     margin: auto;
     text-align: left;
     background: white;
@@ -17,4 +17,17 @@ body {
 #main h1 {
     margin-top: 0;
     font-size: 35px;
+}
+
+.users {
+    float: right;
+    position: absolute;
+    margin-left: 30%;
+}
+.messages{
+    width: 400px;
+}
+
+.messageBold {
+    font-weight: bold;
 }
