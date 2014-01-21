@@ -3,6 +3,33 @@ $(document).ready(function() {
 
   var contentDiv = $(".messages");
   var lastMessageTime = new Date("2000-01-21T00:12:59.906Z");
+  var username = window.location.search.slice(10);
+  console.log(username);
+
+  var makeMessage = function() {
+    var message = {};
+    message.username = username;
+    message.text = $(".messagebox").val();
+    message.room = 'test';
+    return message;
+  };
+
+  var send = function(message) {
+    $.ajax({
+      url:"https://api.parse.com/1/classes/chatterbox",
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(message),
+      success: function() {
+        console.log("Message sent!");
+      },
+      error: function(error) {
+        console.log("Error with message: " + error.message);
+      }
+    });
+
+  };
+
 
   var fetch = function(fn) {
     $.ajax({
@@ -38,6 +65,11 @@ $(document).ready(function() {
     }, 2000);
   };
 
-  fetch(display);
+  $(".submitButton").on("click", function() {
+    send(makeMessage());
+    $('.messagebox').val("");
+  });
+
   refresh();
+
 });
