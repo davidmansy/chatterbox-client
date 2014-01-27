@@ -9,7 +9,7 @@ $(document).ready(function() {
   var users = {};
   var $roomsAvail = $('.roomsAvail');
 
-
+  //Utility function to create a message
   var makeMessage = function() {
     var message = {};
     message.username = username;
@@ -18,6 +18,7 @@ $(document).ready(function() {
     return message;
   };
 
+  //SENDING A MESSAGE
   var send = function(message) {
     $.ajax({
       url:"https://api.parse.com/1/classes/chatterbox",
@@ -33,7 +34,8 @@ $(document).ready(function() {
     });
   };
 
-
+  //RETRIEVING MESSAGES
+  //Core ajax call using promise
   var getMessages = function() {
     var promise = $.Deferred();
     $.ajax({
@@ -48,59 +50,21 @@ $(document).ready(function() {
     return promise;
   };
 
-  var storeRooms = function(message) {
-    if(message.roomname && !(rooms[message.roomname])) {
-      if(message.roomname.length > 15) {
-        message.roomname = message.roomname.slice(0,15) + "...";
-      }
-      rooms[message.roomname] = message.roomname;
-      addRoomsToList(message.roomname);
-      console.log(message.room);
-    }
+  //At start of the app, fetch all messages and display them
+  //IN addition, store all rooms and users
+  var firstFetch = function(fn) {
+    var messagesPromise = getMessages();
+    messagesPromise.done(function(messages) {
+      $.each(messages, function(index, message) {
+        fn(message);
+        storeRooms(message);
+        storeUsers(message);
+      });
+    });
   };
 
-  var storeUsers = function(message) {
-    if(message.username && !(users[message.username])) {
-      if(message.username.length > 15) {
-        message.username = message.username.slice(0,15) + "...";
-      }
-      users[message.username] = {};
-      users[message.username]['friend'] = false;
-      addUsersToList(message.username);
-      console.log(users[message.username]);
-    }
-  };
-
-  var switchFriend = function(name) {
-    console.log(users[name]);
-    console.log(users[name].friend);
-    if(users[name].friend === true) {
-      users[name].friend = false;
-    }else {
-      users[name].friend = true;
-    }
-    console.log(users[name].friend);
-  };
-
-
-  var addRoomsToList = function(room) {
-    var $option = $("<option></option>");
-    $option.attr("value", room);
-    $option.text(room);
-    $roomsAvail.append($option);
-  };
-
-  var addUsersToList = function(name) {
-    var $label = $("<label></label>");
-    var $checkbox = $("<input type='checkbox' name='users'/>");
-    $checkbox.attr("value", name);
-    $label.append($checkbox);
-    $label.append(name);
-    $(".users").append($label);
-    $(".users").append("<br>");
-  };
-//         <input type="checkbox" name="users" value="Vinnie">Vinnie<br>
-
+  //Following refresh call this function that get all messages and check if there are new ones
+  //For each new one, we store room and users
   var fetch = function(fn) {
     var messagesPromise = getMessages();
     messagesPromise.done(function(messages) {
@@ -115,18 +79,74 @@ $(document).ready(function() {
     });
   };
 
-  var firstFetch = function(fn) {
-    var messagesPromise = getMessages();
-    messagesPromise.done(function(messages) {
-      $.each(messages, function(index, message) {
-        fn(message);
-        storeRooms(message);
-        storeUsers(message);
-      });
-    });
+  var refresh = function() {
+    setInterval(function() {
+      fetch(display);
+    }, 2000);
   };
 
-  var parseOld = function() {
+  //ROOMS
+  //Store new rooms
+  var storeRooms = function(message) {
+    if(message.roomname && !(rooms[message.roomname])) {
+      if(message.roomname.length > 15) {
+        message.roomname = message.roomname.slice(0,15) + "...";
+      }
+      rooms[message.roomname] = message.roomname;
+      addRoomsToList(message.roomname);
+      console.log(message.room);
+    }
+  };
+
+  //Display a room in the list
+  var addRoomsToList = function(room) {
+    var $option = $("<option></option>");
+    $option.attr("value", room);
+    $option.text(room);
+    $roomsAvail.append($option);
+  };
+
+  //USERS
+  //Store new users
+  var storeUsers = function(message) {
+    if(message.username && !(users[message.username])) {
+      if(message.username.length > 15) {
+        message.username = message.username.slice(0,15) + "...";
+      }
+      users[message.username] = {};
+      users[message.username]['friend'] = false;
+      addUsersToList(message.username);
+      console.log(users[message.username]);
+    }
+  };
+
+  //Display a user in the list
+  var addUsersToList = function(name) {
+    var $label = $("<label></label>");
+    var $checkbox = $("<input type='checkbox' name='users'/>");
+    $checkbox.attr("value", name);
+    $label.append($checkbox);
+    $label.append(name);
+    $(".users").append($label);
+    $(".users").append("<br>");
+  };
+
+  //Update the user friend status
+  var switchFriend = function(name) {
+    console.log(users[name]);
+    console.log(users[name].friend);
+    if(users[name].friend === true) {
+      users[name].friend = false;
+    }else {
+      users[name].friend = true;
+    }
+    console.log(users[name].friend);
+  };
+
+
+  //DISPLAY DATA
+  //Update the messages style when a user is checked as friend
+  var updateExistingMessages = function() {
     $(".message").each(function(index) {
       console.log($(this).attr("name"));
       var name = $(this).attr("name");
@@ -139,6 +159,7 @@ $(document).ready(function() {
     });
   };
 
+  //Display a message at the top of the list
   var display = function(message) {
     var $messageDiv = $("<div></div>");
     $messageDiv.attr("name", message.username);
@@ -152,30 +173,28 @@ $(document).ready(function() {
     contentDiv.prepend($messageDiv);
   };
 
-  var refresh = function() {
-    setInterval(function() {
-      fetch(display);
-    }, 2000);
-  };
-
+  //HANDLING EVENTS ON THE PAGE
+  //Create a message
   $(".submitButton").on("click", function() {
     send(makeMessage());
     $('.messagebox').val("");
   });
 
+  //Update the current room - working in progress
   $(".roomsAvail").on("change", function() {
     console.log("change happened... " + $( ".roomsAvail option:selected" ).val() + " changed");
   });
 
+  //If a friend is checked, launch the updateExistingMessages function
   $(".users").on("change", "input", function() {
     console.log("change happened...");
     console.log($(this).attr("value"));
     switchFriend($(this).attr("value"));
-    parseOld();
+    updateExistingMessages();
 
   });
 
-
+  //MAIN PROGRAM
   firstFetch(display);
   refresh();
 });
